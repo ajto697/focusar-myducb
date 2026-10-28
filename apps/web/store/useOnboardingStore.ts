@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type SchoolClass =
@@ -20,11 +20,11 @@ export interface PetState {
   hasUniform: boolean;
 }
 
-export const PET_STAGES: Record<PetStage, { emoji: string; label: string; xpRequired: number }> = {
-  EGG:     { emoji: "🥚", label: "Trung Than Ky",    xpRequired: 0   },
-  BABY:    { emoji: "🐣", label: "Thu Con De Thuong",  xpRequired: 50  },
-  TEEN:    { emoji: "🦊", label: "Cao Thieu Nien",    xpRequired: 200 },
-  WARRIOR: { emoji: "🦁", label: "Chien Binh Hoc Duong", xpRequired: 500 }
+export const PET_STAGES: Record<PetStage, { emoji: string; label: string; xpRequired: number; description: string }> = {
+  EGG:     { emoji: "🥚", label: "Trứng Thần Kỳ",       xpRequired: 0,   description: "Đang ấp ủ ước mơ thi đỗ" },
+  BABY:    { emoji: "🐣", label: "Linh Thú Bé Bỏng",     xpRequired: 50,  description: "Bắt đầu làm quen với bài vở" },
+  TEEN:    { emoji: "🦊", label: "Cáo Tập Trung",       xpRequired: 200, description: "Học tập bền bỉ, né mọi xao nhãng" },
+  WARRIOR: { emoji: "🦁", label: "Chiến Binh Mỹ Đức B",  xpRequired: 500, description: "Đỉnh cao phong độ, cày cuốc top 1 trường" }
 };
 
 export function calcPetStage(xp: number): PetStage {

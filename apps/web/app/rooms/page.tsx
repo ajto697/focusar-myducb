@@ -46,7 +46,10 @@ export default function RoomLobbyPage() {
     createRoom(newRoomName, newRoomCategory, newRoomMaxMembers);
     setIsModalOpen(false);
     setNewRoomName('');
-    router.push(`/rooms/${rooms[0].id}`);
+    const target = useRoomStore.getState().currentRoom;
+    if (target) {
+      router.push(`/rooms/${target.id}`);
+    }
   };
 
   return (

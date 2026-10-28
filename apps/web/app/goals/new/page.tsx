@@ -14,20 +14,24 @@ import {
   Zap, 
   ChevronLeft,
   ListTodo,
-  Target
+  Target,
+  GraduationCap
 } from 'lucide-react';
 import { useSessionStore, MicroTask } from '../../../store/useSessionStore';
+import { useOnboardingStore } from '../../../store/useOnboardingStore';
 
 const PRESET_GOALS = [
-  'Viết bài luận về biến đổi khí hậu',
-  'Học 20 từ vựng tiếng Anh chủ đề Công nghệ',
-  'Dọn dẹp bàn làm việc & sắp xếp tài liệu',
-  'Tạo slide thuyết trình 5 trang về AI'
+  'Ôn thi giữa kỳ môn Toán (Hàm số bậc hai & Bất phương trình)',
+  'Làm 10 câu trắc nghiệm Tiếng Anh từ vựng & ngữ pháp',
+  'Lập dàn ý phân tích bài thơ Tây Tiến (Ngữ Văn 12)',
+  'Ôn công thức Vật Lý chương Dao động điều hòa',
+  'Cân bằng 5 phương trình phản ứng Oxi hóa - Khử (Hóa)'
 ];
 
 export default function NewGoalPage() {
   const router = useRouter();
   const setGoalAndTasks = useSessionStore((state) => state.setGoalAndTasks);
+  const { schoolClass, targetSubject } = useOnboardingStore();
 
   const [goalInput, setGoalInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +55,11 @@ export default function NewGoalPage() {
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal: goalToAnalyze })
+        body: JSON.stringify({
+          goal: goalToAnalyze,
+          subject: targetSubject || 'Toán',
+          schoolClass: schoolClass || '12C1'
+        })
       });
 
       if (!response.ok) {

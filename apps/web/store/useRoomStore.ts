@@ -32,27 +32,27 @@ export interface NudgeEffect {
 const MOCK_INITIAL_ROOMS: StudyRoom[] = [
   {
     id: 'room-1',
-    name: 'Góc Học Tĩnh Lặng',
+    name: 'Phòng Luyện Đề Toán 12A1 📐',
     category: 'Học thuật',
     memberCount: 6,
-    maxMembers: 10,
+    maxMembers: 12,
     status: 'FOCUS',
     secondsLeft: 1250, // 20 phút 50 giây còn lại
     initialSeconds: 1500, // 25 phút
     isTimerRunning: true,
     members: [
-      { id: 'u1', name: 'Minh Anh', avatar: '🐱', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
-      { id: 'u2', name: 'Đức Huy', avatar: '🦊', isCameraOn: true, focusStatus: 'FOCUS' },
-      { id: 'u3', name: 'Thảo Nhi', avatar: '🐼', isCameraOn: false, focusStatus: 'FOCUS' },
-      { id: 'u4', name: 'Bảo Nam', avatar: '🐰', isCameraOn: true, focusStatus: 'FOCUS' },
-      { id: 'u5', name: 'Hoàng Yến', avatar: '🐻', isCameraOn: false, focusStatus: 'AWAY' },
-      { id: 'u6', name: 'Bạn (Tôi)', avatar: '🌱', isCameraOn: true, focusStatus: 'FOCUS' }
+      { id: 'u1', name: 'Minh Anh (12A1)', avatar: '🦁', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
+      { id: 'u2', name: 'Đức Huy (12A1)', avatar: '🦊', isCameraOn: true, focusStatus: 'FOCUS' },
+      { id: 'u3', name: 'Thảo Nhi (12A1)', avatar: '🐼', isCameraOn: false, focusStatus: 'FOCUS' },
+      { id: 'u4', name: 'Bảo Nam (12A1)', avatar: '🐰', isCameraOn: true, focusStatus: 'FOCUS' },
+      { id: 'u5', name: 'Hoàng Yến (12A1)', avatar: '🐻', isCameraOn: false, focusStatus: 'AWAY' },
+      { id: 'u6', name: 'Em (Bạn)', avatar: '🌱', isCameraOn: true, focusStatus: 'FOCUS' }
     ]
   },
   {
     id: 'room-2',
-    name: 'Lập Trình Đêm Khuya 💻',
-    category: 'Lập trình',
+    name: 'Phòng Luyện Anh Văn 11B2 🌍',
+    category: 'Ngoại ngữ',
     memberCount: 8,
     maxMembers: 12,
     status: 'FOCUS',
@@ -60,40 +60,40 @@ const MOCK_INITIAL_ROOMS: StudyRoom[] = [
     initialSeconds: 1500,
     isTimerRunning: true,
     members: [
-      { id: 'u10', name: 'Tuấn Dev', avatar: '🚀', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
-      { id: 'u11', name: 'Thành Code', avatar: '⚡', isCameraOn: true, focusStatus: 'FOCUS' },
-      { id: 'u12', name: 'Phương Thảo', avatar: '🐱', isCameraOn: false, focusStatus: 'FOCUS' },
-      { id: 'u13', name: 'Gia Bảo', avatar: '🦊', isCameraOn: true, focusStatus: 'FOCUS' }
+      { id: 'u10', name: 'Tuấn Anh (11B2)', avatar: '🚀', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
+      { id: 'u11', name: 'Thành Long (11B2)', avatar: '⚡', isCameraOn: true, focusStatus: 'FOCUS' },
+      { id: 'u12', name: 'Phương Thảo (11B2)', avatar: '🐱', isCameraOn: false, focusStatus: 'FOCUS' },
+      { id: 'u13', name: 'Gia Bảo (11B2)', avatar: '🦊', isCameraOn: true, focusStatus: 'FOCUS' }
     ]
   },
   {
     id: 'room-3',
-    name: 'Ôn Thi Cấp Tốc 📚',
+    name: 'Phòng KHTN: Lý - Hóa - Sinh 🧪',
     category: 'Học thuật',
-    memberCount: 4,
-    maxMembers: 8,
+    memberCount: 5,
+    maxMembers: 10,
     status: 'BREAK',
     secondsLeft: 180, // 3 phút nghỉ còn lại
     initialSeconds: 300, // 5 phút nghỉ
     isTimerRunning: true,
     members: [
-      { id: 'u20', name: 'Quỳnh Trang', avatar: '🦄', isCameraOn: true, focusStatus: 'BREAK', isHost: true },
-      { id: 'u21', name: 'Nhật Minh', avatar: '🐨', isCameraOn: false, focusStatus: 'BREAK' }
+      { id: 'u20', name: 'Quỳnh Trang (12C3)', avatar: '🦄', isCameraOn: true, focusStatus: 'BREAK', isHost: true },
+      { id: 'u21', name: 'Nhật Minh (10A1)', avatar: '🐨', isCameraOn: false, focusStatus: 'BREAK' }
     ]
   },
   {
     id: 'room-4',
-    name: 'Chill Lofi & Write ☕',
+    name: 'Phòng Đọc Sách & Viết Văn 📝',
     category: 'Chill',
     memberCount: 3,
-    maxMembers: 6,
+    maxMembers: 8,
     status: 'FOCUS',
     secondsLeft: 1100,
     initialSeconds: 1500,
     isTimerRunning: false,
     members: [
-      { id: 'u30', name: 'Ánh Dương', avatar: '🌻', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
-      { id: 'u31', name: 'Quang Việt', avatar: '☕', isCameraOn: true, focusStatus: 'FOCUS' }
+      { id: 'u30', name: 'Ánh Dương (11B1)', avatar: '🌻', isCameraOn: true, focusStatus: 'FOCUS', isHost: true },
+      { id: 'u31', name: 'Quang Việt (12C2)', avatar: '☕', isCameraOn: true, focusStatus: 'FOCUS' }
     ]
   }
 ];
