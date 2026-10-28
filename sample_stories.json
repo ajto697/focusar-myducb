@@ -1,0 +1,128 @@
+[
+  {
+    "id": "basketball_news_17_08_2026",
+    "title": "Bản Tin Bóng Rổ HOT Ngày 17/08/2026",
+    "bgm": "court",
+    "outputFileName": "Ban_Tin_Bong_Ro_17_08_2026.webm",
+    "scenes": [
+      {
+        "id": 1,
+        "image": "news_scene_1.png",
+        "duration": 6,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Chào mừng các bạn đến với Bản Tin Bóng Rổ HOT hôm nay, ngày 17 tháng 8 năm 2026 cùng Bi Bót và Mascot Bi!",
+        "motion": "zoom-in",
+        "sfx": "whistle"
+      },
+      {
+        "id": 2,
+        "image": "news_scene_2.png",
+        "duration": 7,
+        "speaker": "Bóng (Mascot Bi)",
+        "avatar": "mascot_bi.png",
+        "text": "Tin nóng sốt dẻo ngày 17 tháng 8! Hợp đồng chuyển nhượng kỷ lục 250 triệu USD vừa được kích hoạt bùng nổ tại giải NBA!",
+        "motion": "pan-right",
+        "sfx": "ding"
+      },
+      {
+        "id": 3,
+        "image": "scene_new_6.png",
+        "duration": 7,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Tại giải đấu FIBA 2026 vừa kết thúc chiều nay, cú ném 3 điểm ném nửa sân Buzzer Beater đã đưa đội nhà vào chung kết nghẹt thở!",
+        "motion": "zoom-out",
+        "sfx": "bounce"
+      },
+      {
+        "id": 4,
+        "image": "scene_new_1.png",
+        "duration": 7,
+        "speaker": "Bóng (Mascot Bi)",
+        "avatar": "mascot_bi.png",
+        "text": "Còn tại giải bóng rổ Việt Nam VBA 2026, siêu sao MVP vừa làm nên lịch sử khi ghi tới 50 điểm trong một trận đấu đỉnh cao!",
+        "motion": "pan-left",
+        "sfx": "whistle"
+      },
+      {
+        "id": 5,
+        "image": "poster.png",
+        "duration": 6,
+        "speaker": "Bi & Bi Bót",
+        "avatar": "poster.png",
+        "text": "Cảm ơn các bạn đã theo dõi bản tin bóng rổ ngày 17 tháng 8 năm 2026! Đừng quên bấm theo dõi để xem bản tin ngày mai nhé!",
+        "motion": "hero-zoom",
+        "sfx": "bell"
+      }
+    ]
+  },
+  {
+    "id": "brand_new_basketball_history",
+    "title": "Lịch Sử Bóng Rổ (Bản Đồ Họa AI Mới 2026)",
+    "bgm": "springfield",
+    "outputFileName": "Lich_Su_Bong_Ro_AI_Moi.webm",
+    "scenes": [
+      {
+        "id": 1,
+        "image": "scene_new_1.png",
+        "duration": 5,
+        "speaker": "Bóng (Mascot Bi)",
+        "avatar": "mascot_bi.png",
+        "text": "Bi Bót ơi! Nhìn cái rổ cao tít kia kìa! Sao hồi xưa người ta lại nghĩ ra việc treo rổ lên cao như thế nhỉ?",
+        "motion": "zoom-in",
+        "sfx": "whistle"
+      },
+      {
+        "id": 2,
+        "image": "scene_new_2.png",
+        "duration": 6,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Năm 1891, bên Mỹ vào mùa đông lạnh cóng! Cả phòng tập YMCA bị nhốt trong nhà, học sinh chán quá đánh nhau suốt ngày!",
+        "motion": "zoom-out",
+        "sfx": "wind"
+      },
+      {
+        "id": 3,
+        "image": "scene_new_3.png",
+        "duration": 6,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Thế là thầy Naismith được giao nhiệm vụ 14 ngày phải sáng chế môn thể thao mới trong nhà, không là bị đuổi việc!",
+        "motion": "pan-left",
+        "sfx": "ding"
+      },
+      {
+        "id": 4,
+        "image": "scene_new_4.png",
+        "duration": 6,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Thầy nhờ bác bảo vệ tìm 2 cái thùng gỗ. Bác ấy mang về 2 cái rổ đựng đào còn nguyên đáy!",
+        "motion": "zoom-in",
+        "sfx": "thud"
+      },
+      {
+        "id": 5,
+        "image": "scene_new_5.png",
+        "duration": 7,
+        "speaker": "Bi Bót (Glasses Boy)",
+        "avatar": "mascot_bot.png",
+        "text": "Mỗi lần ném trúng, quả bóng mắc kẹt trong rổ! Phải dựng cái thang gỗ trèo lên móc bóng ra mới chơi tiếp được!",
+        "motion": "pan-up",
+        "sfx": "bounce"
+      },
+      {
+        "id": 6,
+        "image": "scene_new_6.png",
+        "duration": 6,
+        "speaker": "Bi & Bi Bót",
+        "avatar": "poster.png",
+        "text": "Về sau người ta đục thủng đáy rổ để bóng rơi tự do, tạo nên môn bóng rổ hiện đại bùng nổ toàn cầu!",
+        "motion": "hero-zoom",
+        "sfx": "bell"
+      }
+    ]
+  }
+]

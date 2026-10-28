@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AutoMascot Video Factory - Tool Tạo Video Tự Động Hàng Loạt: Mascot kể chuyện lịch sử bóng rổ, lồng tiếng, nhạc nền, quản lý hàng chờ và xuất MP4/WebM liên tục.">
+  <title>AutoMascot Video Factory - Continuous Video Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="brand">
+      <span class="brand-icon">🏀</span>
+      <span class="brand-title">AutoMascot Video Factory</span>
+      <span class="badge-tag">Full HD 60FPS Video Engine v2.0</span>
+    </div>
+    <div class="header-actions" style="display:flex; gap:0.5rem;">
+      <button id="btnToggleBatchPanel" class="btn" style="background: rgba(0, 242, 254, 0.2); border-color: #00F2FE;">
+        ⚡ Continuous Queue Dashboard
+      </button>
+      <button id="btnExportVideo" class="btn btn-success">
+        🎬 Export Active Video (.webm)
+      </button>
+    </div>
+  </header>
+
+  <!-- Batch Queue Banner Panel (Collapsible) -->
+  <div id="batchDashboardPanel" class="container" style="display: block; margin-bottom: 0;">
+    <div class="panel-card" style="width: 100%; background: rgba(13, 17, 23, 0.95); border: 2px solid var(--accent-cyan);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 class="panel-title" style="margin: 0; color: var(--accent-cyan);">
+          ⚡ Trình Quản Lý Tạo Video Liên Tục (Continuous Auto Generator Queue)
+        </h3>
+        <span id="queueBadge" class="badge-tag">Queue: Active</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <!-- Add New Topic / Script -->
+        <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-glass);">
+          <h4 style="color: var(--accent-yellow); margin-bottom: 0.5rem;">📝 1. Thêm Kịch Bản Mới</h4>
+          <input type="text" id="newTopicTitle" class="select-input" placeholder="Tiêu đề video (Ví dụ: Sự thật về quả bóng rổ)" style="margin-bottom: 0.5rem;">
+          <textarea id="newTopicScriptText" class="select-input" rows="3" placeholder="Nhập văn bản kể chuyện của mascot..." style="margin-bottom: 0.5rem; resize: vertical;"></textarea>
+          <button id="btnAddScriptToQueue" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            ➕ Add Story to Queue
+          </button>
+        </div>
+
+        <!-- Render Queue Status -->
+        <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-glass);">
+          <h4 style="color: var(--accent-yellow); margin-bottom: 0.5rem;">⏳ 2. Hàng Chờ Auto-Render</h4>
+          <div id="queueListContainer" style="max-height: 140px; overflow-y: auto; font-size: 0.85rem;">
+            <!-- Queue items injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Output Video Library -->
+        <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-glass);">
+          <h4 style="color: var(--accent-yellow); margin-bottom: 0.5rem;">📁 3. Thư Mục File Video Out</h4>
+          <div id="outputVideosList" style="max-height: 140px; overflow-y: auto; font-size: 0.85rem;">
+            <div style="padding:0.4rem; color:var(--accent-yellow);">File video xuất trực tiếp khi bấm nút Export!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="container">
+
+    <!-- Left Main Stage: Video Canvas Player -->
+    <section class="video-stage-card">
+      <div class="screen-wrapper">
+        <canvas id="videoCanvas" width="1280" height="720"></canvas>
+
+        <!-- Dynamic Screen Recording Overlay -->
+        <div class="screen-overlay" style="pointer-events:none;">
+          <div class="top-bar-overlay" style="justify-content:flex-end;">
+            <div id="recIndicator" class="recording-indicator">
+              <span>●</span> REC RECORDING VIDEO...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Controls -->
+      <div class="controls-bar">
+        <div class="progress-container">
+          <span id="currentTime" class="time-display">00:00</span>
+          <input type="range" id="seekBar" class="seek-bar" min="0" max="54" step="0.1" value="0">
+          <span id="totalTime" class="time-display">00:54</span>
+        </div>
+
+        <div class="buttons-row">
+          <div class="left-buttons">
+            <button id="btnPlayPause" class="btn btn-primary">
+              ▶ Play Video
+            </button>
+            <button id="btnRestart" class="btn">
+              ↺ Restart
+            </button>
+            <button id="btnMuteAudio" class="btn">
+              🔊 Audio ON
+            </button>
+          </div>
+
+          <div class="right-buttons">
+            <select id="speedSelect" class="select-input" style="width: 100px;">
+              <option value="0.75">0.75x</option>
+              <option value="1.0" selected>1.0x Normal</option>
+              <option value="1.25">1.25x Fast</option>
+              <option value="1.5">1.5x Turbo</option>
+            </select>
+            <button id="btnFullscreen" class="btn">
+              ⛶ Fullscreen
+            </button>
+          </div>
+        </div>
+
+        <!-- Frame Timeline Strip -->
+        <div class="timeline-strip" id="timelineStrip">
+          <!-- Thumbnail frames injected dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Sidebar Controls -->
+    <aside class="sidebar">
+      
+      <!-- Audio & Voice Control Panel -->
+      <div class="panel-card">
+        <h3 class="panel-title">🎙️ Mascot Voice & Audio Studio</h3>
+
+        <div class="setting-group">
+          <div class="setting-label">
+            <span>Mascot Voice Narration (TTS)</span>
+            <span id="ttsStatusVal">Active</span>
+          </div>
+          <select id="voiceSelect" class="select-input">
+            <option value="default">Default Vietnamese Voice</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">
+            <span>Voice Pitch & Modulation</span>
+          </div>
+          <input type="range" id="pitchSlider" class="range-input" min="0.8" max="1.5" step="0.1" value="1.1">
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">
+            <span>Background Audio Theme</span>
+          </div>
+          <div class="audio-presets-grid">
+            <button class="preset-btn active" data-preset="springfield">🏛️ 1891 Gym</button>
+            <button class="preset-btn" data-preset="blizzard">❄️ Winter Wind</button>
+            <button class="preset-btn" data-preset="court">🏀 Court Bounce</button>
+            <button class="preset-btn" data-preset="cartoon">🎵 Cartoon Upbeat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Script Navigator Panel -->
+      <div class="panel-card">
+        <h3 class="panel-title">📜 Story Script (Kịch Bản Mascot)</h3>
+        <div class="script-list" id="scriptList">
+          <!-- Script entries injected dynamically -->
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NES 8-Bit Retro Game Animation (8 FPS)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    :root {
+      --bg-color: #0b0e14;
+      --border-color: #2b3342;
+      --accent-color: #e59b23;
+      --nes-font: 'Press Start 2P', monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: #f0f4fc;
+      font-family: var(--nes-font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      max-width: 1024px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      color: #fc7460;
+      text-shadow: 3px 3px #000;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.55rem;
+    }
+
+    .badge {
+      background: #182030;
+      border: 1px solid #3c4964;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: #8be9fd;
+    }
+
+    .badge.highlight {
+      background: #442a15;
+      border-color: #e59b23;
+      color: #ffd166;
+    }
+
+    /* Screen Frame Container */
+    .screen-housing {
+      position: relative;
+      background: #161a22;
+      border: 8px solid #282f3d;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.6);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .canvas-viewport {
+      position: relative;
+      width: 768px;
+      height: 720px; /* 3x native NES 256x240 */
+      background: #000;
+      border: 4px solid #0f131a;
+      overflow: hidden;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 840px) {
+      .canvas-viewport {
+        width: 512px;
+        height: 480px; /* 2x native */
+      }
+    }
+
+    @media (max-width: 560px) {
+      .canvas-viewport {
+        width: 256px;
+        height: 240px; /* 1x native */
+      }
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      /* Sharp pixel rendering with no blur/anti-aliasing */
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Scanlines and CRT curvature overlay */
+    .crt-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.35) 50%
+      );
+      background-size: 100% 4px;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+
+    .crt-overlay.disabled {
+      opacity: 0;
+    }
+
+    /* Retro Controllers and Info Panel */
+    .controls-panel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 768px;
+    }
+
+    .btn {
+      font-family: var(--nes-font);
+      font-size: 0.6rem;
+      padding: 8px 12px;
+      color: #fff;
+      background: #252e3e;
+      border: 2px solid #475872;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 4px #10151c;
+      transition: all 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: #313c50;
+      border-color: #617799;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px #10151c;
+    }
+
+    .btn.active {
+      background: #a82020;
+      border-color: #f75555;
+      color: #fff;
+    }
+
+    .btn-gold {
+      border-color: #d69018;
+      background: #523508;
+    }
+    .btn-gold:hover {
+      background: #734a0a;
+    }
+
+    .status-hud {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 768px;
+      font-size: 0.55rem;
+      color: #94a3b8;
+      padding: 0.25rem 0.5rem;
+      background: #111620;
+      border: 1px solid #1f2736;
+      border-radius: 4px;
+    }
+
+    .key-hints {
+      font-size: 0.5rem;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .key-hints span {
+      color: #38bdf8;
+      background: #1e293b;
+      padding: 2px 5px;
+      border-radius: 3px;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>⚔️ 8-BIT RETRO GAME ANIMATION ⚔️</h1>
+      <div class="badge-bar">
+        <span class="badge highlight">FPS: 8.0 (125ms / Frame)</span>
+        <span class="badge">NES NTSC 256x240 Buffer</span>
+        <span class="badge">Bayer Matrix Dithering</span>
+        <span class="badge">Sharp Nearest-Neighbor Pixelated</span>
+        <span class="badge">Zero Anti-Aliasing</span>
+      </div>
+    </header>
+
+    <!-- Main Game Frame -->
+    <div class="screen-housing">
+      <div class="canvas-viewport">
+        <!-- Native 256x240 NES resolution buffer canvas -->
+        <canvas id="nesCanvas" width="256" height="240"></canvas>
+        <div id="crtOverlay" class="crt-overlay"></div>
+      </div>
+    </div>
+
+    <!-- Status Information -->
+    <div class="status-hud">
+      <div>FRAME: <span id="frameCounter" style="color:#38bdf8">0</span> | TIME: <span id="timeCounter" style="color:#4ade80">0.0s</span></div>
+      <div>ANIM SPEED: <span id="fpsDisplay" style="color:#facc15">8 FPS</span></div>
+      <div>DITHER: <span id="ditherDisplay" style="color:#f43f5e">ENABLED (4x4)</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-panel">
+      <button id="btnPlayPause" class="btn">⏸️ PAUSE</button>
+      <button id="btnStep" class="btn">⏭️ STEP 1 FRAME</button>
+      <button id="btnToggleFps" class="btn btn-gold">⏱️ SPEED: 8 FPS</button>
+      <button id="btnToggleDither" class="btn active">🏁 DITHER: ON</button>
+      <button id="btnToggleCRT" class="btn active">📺 CRT SCANLINES: ON</button>
+      <button id="btnAudio" class="btn">🎵 BGM CHIPTUNE: OFF</button>
+    </div>
+
+    <div class="key-hints">
+      [INTERACTIVE CONTROLS]: Move: <span>A / D</span> or <span>← / →</span> | Jump / Attack: <span>W / SPACE / ↑</span> | Pause: <span>P</span>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. NES PALETTE (Authentic NTSC 54 colors) ---
+    const NES = {
+      BLACK:      '#000000',
+      DARK_GRAY:  '#444444',
+      MED_GRAY:   '#888888',
+      WHITE:      '#ffffff',
+      SKY_DARK:   '#003888',
+      SKY_MED:    '#0058f8',
+      SKY_LIGHT:  '#3cbcfc',
+      SKY_PALE:   '#a4e4fc',
+      PURPLE_NIGHT:'#24188c',
+      MOUNTAIN_HI:'#a87048',
+      MOUNTAIN_LO:'#503000',
+      MOUNTAIN_DK:'#301000',
+      CASTLE_WALL:'#747474',
+      CASTLE_DARK:'#404040',
+      CASTLE_ROOF:'#6b207a',
+      GRASS_DARK: '#005000',
+      GRASS_LIGHT:'#00a800',
+      BRICK_BASE: '#b86000',
+      BRICK_SHADOW:'#502800',
+      BRICK_MORTAR:'#281400',
+      GOLD_LIGHT: '#fcb800',
+      GOLD_DARK:  '#a87000',
+      KNIGHT_BLUE:'#0078f8',
+      KNIGHT_DARK:'#002088',
+      KNIGHT_HORN:'#f8b800',
+      KNIGHT_SKIN:'#fc7460',
+      BLADE_STEEL:'#a4e4fc',
+      SLIME_GREEN:'#58d854',
+      SLIME_EYE:  '#002000',
+      BAT_BODY:   '#a84420',
+      BAT_WING:   '#441810',
+      RED_HEART:  '#e40058',
+      EMPTY_HEART:'#381018'
+    };
+
+    // --- 2. 4x4 BAYER DITHER MATRIX FOR 8-BIT SHADING ---
+    // Values 0 to 15
+    const BAYER_4X4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ];
+
+    const canvas = document.getElementById('nesCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Strict pixelation setting: Disable all anti-aliasing / smoothing
+    ctx.imageSmoothingEnabled = false;
+
+    // Simulation & Timing constants
+    let targetFps = 8; // Locked strictly to 8 frames per second
+    let frameDuration = 1000 / targetFps; // 125ms per frame
+    let isRunning = true;
+    let enableDithering = true;
+    let enableCRT = true;
+    let frameCount = 0;
+    let gameTime = 0;
+
+    // Game entity states
+    let scrollX = 0;
+    let knight = {
+      x: 104,
+      y: 156,
+      vx: 0,
+      vy: 0,
+      groundY: 156,
+      animFrame: 0,
+      facing: 1, // 1: right, -1: left
+      isAttacking: false,
+      attackCooldown: 0,
+      jumpState: false,
+      hp: 5,
+      maxHp: 6,
+      score: 1500,
+      coins: 14
+    };
+
+    let enemies = [
+      { type: 'slime', x: 190, y: 168, vx: -0.6, anim: 0, baseMin: 172, baseMax: 236 },
+      { type: 'bat', x: 70, y: 55, baseX: 70, baseY: 55, t: 0 },
+      { type: 'bat', x: 160, y: 45, baseX: 160, baseY: 45, t: 2.5 }
+    ];
+
+    let coins = [
+      { x: 148, y: 156, anim: 0 },
+      { x: 164, y: 156, anim: 1 },
+      { x: 232, y: 130, anim: 2 }
+    ];
+
+    // Input handlers
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'KeyP') togglePlayPause();
+      if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+        heroJumpOrAttack();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    function heroJumpOrAttack() {
+      if (!knight.jumpState) {
+        knight.vy = -7.5;
+        knight.jumpState = true;
+        playRetroSfx('jump');
+      } else {
+        knight.isAttacking = true;
+        knight.attackCooldown = 4;
+        playRetroSfx('slash');
+      }
+    }
+
+    // --- 3. DITHERED RECTANGLE DRAWING (True 8-bit Dither) ---
+    function drawDitherRect(x, y, w, h, col1, col2, threshold) {
+      if (!enableDithering) {
+        ctx.fillStyle = threshold >= 8 ? col2 : col1;
+        ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+        return;
+      }
+
+      const ix = Math.floor(x);
+      const iy = Math.floor(y);
+      const iw = Math.floor(w);
+      const ih = Math.floor(h);
+
+      for (let py = 0; py < ih; py++) {
+        const screenY = iy + py;
+        for (let px = 0; px < iw; px++) {
+          const screenX = ix + px;
+          const matrixVal = BAYER_4X4[screenY % 4][screenX % 4];
+          ctx.fillStyle = matrixVal < threshold ? col2 : col1;
+          ctx.fillRect(screenX, screenY, 1, 1);
+        }
+      }
+    }
+
+    // --- 4. GRAPHICS RENDERING PIPELINE ---
+    function renderSkyAndMountains() {
+      // Dithered NES Sky gradient: 3 bands with Bayer transitions
+      // Band 1: Deep Navy/Purple to Sky Medium
+      ctx.fillStyle = NES.SKY_DARK;
+      ctx.fillRect(0, 0, 256, 30);
+
+      // Transition 1
+      drawDitherRect(0, 30, 256, 16, NES.SKY_DARK, NES.SKY_MED, 8);
+
+      // Band 2: Sky Med
+      ctx.fillStyle = NES.SKY_MED;
+      ctx.fillRect(0, 46, 256, 32);
+
+      // Transition 2
+      drawDitherRect(0, 78, 256, 16, NES.SKY_MED, NES.SKY_LIGHT, 8);
+
+      // Band 3: Sky Light down to horizon
+      ctx.fillStyle = NES.SKY_LIGHT;
+      ctx.fillRect(0, 94, 256, 40);
+
+      // Background Clouds (low pixel resolution)
+      const cloudOffset = (scrollX * 0.1) % 120;
+      drawPixelCloud(30 - cloudOffset, 22);
+      drawPixelCloud(140 - cloudOffset, 36);
+      drawPixelCloud(220 - cloudOffset, 26);
+
+      // Distant Mountains (Parallax 0.2)
+      const mtnOffset = Math.floor(scrollX * 0.25);
+      renderMountains(mtnOffset);
+
+      // Castle in background (Right side)
+      renderCastle(170 - Math.floor(scrollX * 0.35), 70);
+
+      // Distant Pine Forest Silhouette
+      renderPineForest(Math.floor(scrollX * 0.5));
+    }
+
+    function drawPixelCloud(cx, cy) {
+      ctx.fillStyle = NES.SKY_PALE;
+      const x = Math.floor(cx);
+      const y = Math.floor(cy);
+      ctx.fillRect(x + 4, y, 20, 6);
+      ctx.fillRect(x, y + 4, 30, 8);
+      ctx.fillRect(x + 8, y - 4, 12, 6);
+      // Dither underside of cloud
+      drawDitherRect(x + 2, y + 10, 26, 4, NES.SKY_PALE, NES.SKY_LIGHT, 9);
+    }
+
+    function renderMountains(offset) {
+      // Left big peak
+      const px = 10 - (offset % 180);
+      drawMountainPeak(px, 40, 70, 100);
+      drawMountainPeak(px + 60, 60, 50, 80);
+      drawMountainPeak(px + 140, 50, 60, 90);
+    }
+
+    function drawMountainPeak(x, y, w, h) {
+      const ix = Math.floor(x);
+      const mid = ix + Math.floor(w / 2);
+
+      // Light side of the mountain (lit by left sunlight)
+      for (let i = 0; i < h; i++) {
+        const curY = y + i;
+        if (curY >= 140) break;
+        const widthHalf = Math.floor((i / h) * (w / 2));
+        ctx.fillStyle = NES.MOUNTAIN_HI;
+        ctx.fillRect(mid - widthHalf, curY, widthHalf, 1);
+
+        // Shadow side (right side with dithering)
+        const darkWidth = widthHalf;
+        for (let dx = 0; dx < darkWidth; dx++) {
+          const screenX = mid + dx;
+          const val = BAYER_4X4[curY % 4][screenX % 4];
+          ctx.fillStyle = val < 9 ? NES.MOUNTAIN_DK : NES.MOUNTAIN_LO;
+          ctx.fillRect(screenX, curY, 1, 1);
+        }
+      }
+    }
+
+    function renderCastle(cx, cy) {
+      const x = Math.floor(cx);
+      const y = Math.floor(cy);
+      if (x < -60 || x > 260) return;
+
+      // Castle Main Wall
+      ctx.fillStyle = NES.CASTLE_WALL;
+      ctx.fillRect(x + 10, y + 20, 48, 45);
+
+      // Left Spire
+      ctx.fillRect(x, y + 10, 14, 55);
+      // Spire cone roof
+      for (let r = 0; r < 12; r++) {
+        const rw = 14 - r;
+        ctx.fillStyle = NES.CASTLE_ROOF;
+        ctx.fillRect(x + Math.floor(r / 2), y + 10 - r, rw, 1);
+      }
+
+      // Center Big Tower
+      ctx.fillRect(x + 24, y, 20, 65);
+      // Battlements
+      ctx.fillStyle = NES.CASTLE_DARK;
+      ctx.fillRect(x + 25, y - 4, 4, 5);
+      ctx.fillRect(x + 32, y - 4, 4, 5);
+      ctx.fillRect(x + 39, y - 4, 4, 5);
+
+      // Right Tower
+      ctx.fillStyle = NES.CASTLE_WALL;
+      ctx.fillRect(x + 50, y + 14, 14, 51);
+      ctx.fillStyle = NES.CASTLE_DARK;
+      ctx.fillRect(x + 51, y + 10, 3, 5);
+      ctx.fillRect(x + 59, y + 10, 3, 5);
+
+      // Castle Portcullis / Gate
+      ctx.fillStyle = NES.BLACK;
+      ctx.fillRect(x + 28, y + 44, 12, 21);
+      ctx.fillRect(x + 29, y + 42, 10, 3);
+
+      // Dithering shadow on right walls
+      drawDitherRect(x + 38, y + 6, 6, 58, NES.CASTLE_WALL, NES.CASTLE_DARK, 8);
+      drawDitherRect(x + 58, y + 18, 6, 47, NES.CASTLE_WALL, NES.CASTLE_DARK, 8);
+    }
+
+    function renderPineForest(offset) {
+      const baseY = 135;
+      const startX = - (offset % 14);
+      for (let i = startX; i < 270; i += 12) {
+        drawPineTree(i, baseY);
+      }
+    }
+
+    function drawPineTree(x, y) {
+      ctx.fillStyle = NES.GRASS_DARK;
+      // 3 tiers of pine triangles
+      for (let t = 0; t < 3; t++) {
+        const ty = y - 22 + t * 8;
+        const tw = 6 + t * 4;
+        for (let r = 0; r < 9; r++) {
+          const rowW = Math.floor((r / 9) * tw);
+          ctx.fillRect(x - rowW, ty + r, rowW * 2 + 1, 1);
+        }
+      }
+    }
+
+    function renderPlatformsAndGround() {
+      // Stone block ground (y: 172 to 240)
+      const floorY = 172;
+
+      // Platform Left: 0 to 90
+      drawStonePlatform(0, floorY, 86, 40);
+
+      // Chasm / Gap: 86 to 150 (Black pit with bricks)
+      ctx.fillStyle = NES.BLACK;
+      ctx.fillRect(86, floorY + 4, 64, 40);
+
+      // Platform Right: 150 to 256
+      drawStonePlatform(150, floorY, 106, 40);
+
+      // Upper Stone Ledge on right: x: 190, y: 136
+      drawStonePlatform(190, 136, 66, 36);
+
+      // Treasure Chest on Upper Ledge
+      renderChest(224, 122);
+    }
+
+    function drawStonePlatform(x, y, w, h) {
+      // Stone surface top grass/moss
+      ctx.fillStyle = NES.GRASS_LIGHT;
+      ctx.fillRect(x, y, w, 2);
+      ctx.fillStyle = NES.GRASS_DARK;
+      ctx.fillRect(x, y + 2, w, 2);
+
+      // Brick pattern
+      const brickH = 8;
+      const brickW = 16;
+      for (let by = y + 4; by < y + h; by += brickH) {
+        const rowIdx = Math.floor((by - y) / brickH);
+        const shift = (rowIdx % 2 === 0) ? 0 : 8;
+
+        for (let bx = x; bx < x + w; bx += brickW) {
+          const actualX = bx + shift;
+          const drawW = Math.min(brickW - 2, x + w - actualX);
+          if (drawW <= 0) continue;
+
+          // Brick face
+          ctx.fillStyle = NES.BRICK_BASE;
+          ctx.fillRect(actualX, by, drawW, brickH - 2);
+
+          // Shadow edge on bottom/right of each brick
+          ctx.fillStyle = NES.BRICK_SHADOW;
+          ctx.fillRect(actualX, by + brickH - 3, drawW, 1);
+          ctx.fillRect(actualX + drawW - 1, by, 1, brickH - 2);
+        }
+
+        // Mortar lines
+        ctx.fillStyle = NES.BRICK_MORTAR;
+        ctx.fillRect(x, by + brickH - 2, w, 2);
+      }
+    }
+
+    function renderChest(cx, cy) {
+      // Classic 8-bit wooden chest
+      ctx.fillStyle = NES.BRICK_SHADOW;
+      ctx.fillRect(cx, cy, 18, 14);
+      ctx.fillStyle = NES.MOUNTAIN_HI;
+      ctx.fillRect(cx + 2, cy + 2, 14, 10);
+      // Gold latches
+      ctx.fillStyle = NES.GOLD_LIGHT;
+      ctx.fillRect(cx + 1, cy + 5, 16, 2);
+      ctx.fillRect(cx + 8, cy + 6, 3, 4);
+      ctx.fillStyle = NES.BLACK;
+      ctx.fillRect(cx + 9, cy + 8, 1, 2);
+    }
+
+    // --- 5. ANIMATED SPRITE DRAWING (8 FPS Animated Cycles) ---
+
+    // 8-bit Knight Character (16x20 pixels)
+    function renderKnight() {
+      const kx = Math.floor(knight.x);
+      const ky = Math.floor(knight.y);
+      const flip = knight.facing === -1;
+      const frame = knight.animFrame % 4; // 4-frame run cycle
+
+      ctx.save();
+      if (flip) {
+        ctx.translate(kx + 16, ky);
+        ctx.scale(-1, 1);
+      } else {
+        ctx.translate(kx, ky);
+      }
+
+      // Helm & Horns
+      ctx.fillStyle = NES.KNIGHT_HORN;
+      ctx.fillRect(1, 0, 3, 5);  // Left Horn
+      ctx.fillRect(12, 0, 3, 5); // Right Horn
+      ctx.fillStyle = NES.KNIGHT_BLUE;
+      ctx.fillRect(3, 3, 10, 8); // Helmet Dome
+
+      // Visor slit
+      ctx.fillStyle = NES.BLACK;
+      ctx.fillRect(5, 7, 7, 2);
+      ctx.fillRect(8, 9, 2, 2);
+
+      // Body Armor
+      ctx.fillStyle = NES.KNIGHT_BLUE;
+      ctx.fillRect(4, 11, 8, 6);
+      ctx.fillStyle = NES.KNIGHT_DARK;
+      ctx.fillRect(4, 15, 8, 2); // Belt
+
+      // Feet / Run Cycle (8fps cycle)
+      ctx.fillStyle = NES.KNIGHT_BLUE;
+      if (knight.jumpState) {
+        // Jumping legs tucked
+        ctx.fillRect(3, 17, 4, 3);
+        ctx.fillRect(9, 16, 4, 4);
+      } else if (frame === 0) {
+        ctx.fillRect(3, 17, 3, 4);
+        ctx.fillRect(10, 17, 3, 4);
+      } else if (frame === 1) {
+        ctx.fillRect(1, 17, 4, 4);
+        ctx.fillRect(9, 17, 4, 3);
+      } else if (frame === 2) {
+        ctx.fillRect(4, 17, 3, 4);
+        ctx.fillRect(9, 17, 3, 4);
+      } else {
+        ctx.fillRect(4, 17, 4, 3);
+        ctx.fillRect(11, 17, 4, 4);
+      }
+
+      // Sword & Arm
+      if (knight.isAttacking) {
+        // Sword thrusting forward
+        ctx.fillStyle = NES.KNIGHT_SKIN;
+        ctx.fillRect(11, 9, 4, 3);
+        // Hilt
+        ctx.fillStyle = NES.GOLD_LIGHT;
+        ctx.fillRect(14, 7, 2, 7);
+        // Blade
+        ctx.fillStyle = NES.BLADE_STEEL;
+        ctx.fillRect(16, 9, 12, 3);
+        ctx.fillRect(28, 10, 2, 1);
+      } else {
+        // Sword idle upright
+        ctx.fillStyle = NES.KNIGHT_SKIN;
+        ctx.fillRect(11, 10, 3, 3);
+        // Hilt
+        ctx.fillStyle = NES.GOLD_LIGHT;
+        ctx.fillRect(12, 9, 5, 2);
+        // Blade tilted
+        ctx.fillStyle = NES.BLADE_STEEL;
+        ctx.fillRect(15, 3, 2, 7);
+        ctx.fillRect(16, 2, 2, 2);
+      }
+
+      ctx.restore();
+    }
+
+    // Slime Monster (14x10 pixels, squish animation)
+    function renderSlime(e) {
+      const sx = Math.floor(e.x);
+      const sy = Math.floor(e.y);
+      const squish = (e.anim % 2 === 0);
+
+      const w = squish ? 16 : 14;
+      const h = squish ? 8 : 10;
+      const yOffset = squish ? 2 : 0;
+
+      // Green gelatinous body
+      ctx.fillStyle = NES.SLIME_GREEN;
+      ctx.fillRect(sx + 2, sy + yOffset, w - 4, h);
+      ctx.fillRect(sx, sy + yOffset + 3, w, h - 3);
+
+      // Highlights
+      ctx.fillStyle = NES.WHITE;
+      ctx.fillRect(sx + 3, sy + yOffset + 2, 3, 2);
+
+      // Cute menacing 8-bit eyes
+      ctx.fillStyle = NES.SLIME_EYE;
+      ctx.fillRect(sx + 4, sy + yOffset + 4, 2, 3);
+      ctx.fillRect(sx + 9, sy + yOffset + 4, 2, 3);
+    }
+
+    // Bat / Gargoyle Enemy (Flapping wing 8fps)
+    function renderBat(b) {
+      const bx = Math.floor(b.x);
+      const by = Math.floor(b.y);
+      const wingUp = (frameCount % 4 < 2);
+
+      // Body
+      ctx.fillStyle = NES.BAT_BODY;
+      ctx.fillRect(bx + 5, by + 3, 4, 6);
+      // Glowing eyes
+      ctx.fillStyle = NES.GOLD_LIGHT;
+      ctx.fillRect(bx + 6, by + 4, 1, 1);
+      ctx.fillRect(bx + 8, by + 4, 1, 1);
+
+      // Wings
+      ctx.fillStyle = NES.BAT_WING;
+      if (wingUp) {
+        // Wings pointing upward
+        ctx.fillRect(bx, by, 5, 4);
+        ctx.fillRect(bx + 9, by, 5, 4);
+        ctx.fillRect(bx + 1, by + 4, 3, 2);
+        ctx.fillRect(bx + 10, by + 4, 3, 2);
+      } else {
+        // Wings pointing downward
+        ctx.fillRect(bx, by + 4, 5, 4);
+        ctx.fillRect(bx + 9, by + 4, 5, 4);
+        ctx.fillRect(bx + 2, by + 2, 3, 2);
+        ctx.fillRect(bx + 9, by + 2, 3, 2);
+      }
+    }
+
+    // Spinning 8-Bit Gold Coin (4 frames)
+    function renderCoin(c) {
+      const cx = Math.floor(c.x);
+      const cy = Math.floor(c.y);
+      const f = (c.anim + Math.floor(frameCount / 2)) % 4;
+
+      ctx.fillStyle = NES.GOLD_LIGHT;
+      if (f === 0) {
+        // Full wide circle (7x9)
+        ctx.fillRect(cx + 2, cy, 4, 8);
+        ctx.fillRect(cx + 1, cy + 1, 6, 6);
+        ctx.fillStyle = NES.GOLD_DARK;
+        ctx.fillRect(cx + 3, cy + 2, 2, 4);
+      } else if (f === 1 || f === 3) {
+        // Medium oval (5x8)
+        ctx.fillRect(cx + 2, cy, 3, 8);
+        ctx.fillRect(cx + 3, cy + 1, 1, 6);
+      } else {
+        // Edge slit (2x8)
+        ctx.fillRect(cx + 3, cy, 2, 8);
+        ctx.fillStyle = NES.WHITE;
+        ctx.fillRect(cx + 3, cy + 2, 1, 2);
+      }
+    }
+
+    // --- 6. AUTHENTIC NES TOP / BOTTOM HUD ---
+    function renderHUD() {
+      // Top Status Bar: STAGE 1-2
+      drawPixelText("STAGE 1-2", 168, 14, NES.WHITE);
+
+      // Hearts / HP
+      for (let i = 0; i < knight.maxHp; i++) {
+        const hx = 16 + i * 11;
+        const hy = 220;
+        const full = i < knight.hp;
+        drawPixelHeart(hx, hy, full);
+      }
+
+      // Score
+      const scoreStr = String(knight.score).padStart(6, '0');
+      drawPixelText(scoreStr, 96, 222, NES.WHITE);
+
+      // Weapon Icon Box
+      ctx.fillStyle = NES.DARK_GRAY;
+      ctx.fillRect(174, 214, 16, 16);
+      ctx.fillStyle = NES.BLACK;
+      ctx.fillRect(176, 216, 12, 12);
+      // Sword icon
+      ctx.fillStyle = NES.BLADE_STEEL;
+      ctx.fillRect(182, 217, 2, 6);
+      ctx.fillStyle = NES.GOLD_LIGHT;
+      ctx.fillRect(180, 223, 6, 2);
+      ctx.fillRect(182, 225, 2, 2);
+
+      // Coin counter
+      drawCoinIcon(204, 219);
+      drawPixelText("x" + String(knight.coins).padStart(2, '0'), 216, 222, NES.GOLD_LIGHT);
+    }
+
+    function drawPixelHeart(x, y, isFull) {
+      ctx.fillStyle = isFull ? NES.RED_HEART : NES.EMPTY_HEART;
+      ctx.fillRect(x + 1, y, 3, 2);
+      ctx.fillRect(x + 5, y, 3, 2);
+      ctx.fillRect(x, y + 2, 9, 3);
+      ctx.fillRect(x + 1, y + 5, 7, 2);
+      ctx.fillRect(x + 3, y + 7, 3, 2);
+    }
+
+    function drawCoinIcon(x, y) {
+      ctx.fillStyle = NES.GOLD_LIGHT;
+      ctx.fillRect(x + 1, y, 4, 6);
+      ctx.fillRect(x, y + 1, 6, 4);
+      ctx.fillStyle = NES.GOLD_DARK;
+      ctx.fillRect(x + 2, y + 2, 2, 2);
+    }
+
+    // Retro 8-bit Minimal Pixel Font Renderer
+    const FONT_MAP = {
+      '0': [0x7,0x5,0x5,0x5,0x7],
+      '1': [0x2,0x6,0x2,0x2,0x7],
+      '2': [0x7,0x1,0x7,0x4,0x7],
+      '3': [0x7,0x1,0x3,0x1,0x7],
+      '4': [0x5,0x5,0x7,0x1,0x1],
+      '5': [0x7,0x4,0x7,0x1,0x7],
+      '6': [0x7,0x4,0x7,0x5,0x7],
+      '7': [0x7,0x1,0x2,0x2,0x2],
+      '8': [0x7,0x5,0x7,0x5,0x7],
+      '9': [0x7,0x5,0x7,0x1,0x7],
+      'S': [0x7,0x4,0x7,0x1,0x7],
+      'T': [0x7,0x2,0x2,0x2,0x2],
+      'A': [0x7,0x5,0x7,0x5,0x5],
+      'G': [0x7,0x4,0x5,0x5,0x7],
+      'E': [0x7,0x4,0x6,0x4,0x7],
+      '-': [0x0,0x0,0x7,0x0,0x0],
+      'x': [0x0,0x5,0x2,0x5,0x0],
+      ' ': [0x0,0x0,0x0,0x0,0x0]
+    };
+
+    function drawPixelText(str, startX, startY, color) {
+      ctx.fillStyle = color;
+      let curX = startX;
+      for (let ch of str) {
+        const glyph = FONT_MAP[ch] || FONT_MAP[' '];
+        for (let row = 0; row < 5; row++) {
+          const bits = glyph[row];
+          for (let bit = 0; bit < 3; bit++) {
+            if ((bits >> (2 - bit)) & 1) {
+              ctx.fillRect(curX + bit, startY + row, 1, 1);
+            }
+          }
+        }
+        curX += 5;
+      }
+    }
+
+    // --- 7. MAIN UPDATE LOOP (STRICT 8 FPS STEPPER) ---
+    function updateGameLogic() {
+      frameCount++;
+      gameTime += 1 / targetFps;
+
+      // Update HUD indicators
+      document.getElementById('frameCounter').textContent = frameCount;
+      document.getElementById('timeCounter').textContent = gameTime.toFixed(1) + 's';
+
+      // Knight Movement input
+      if (keys['KeyA'] || keys['ArrowLeft']) {
+        knight.vx = -1.8;
+        knight.facing = -1;
+        knight.animFrame++;
+        scrollX = Math.max(0, scrollX - 1);
+      } else if (keys['KeyD'] || keys['ArrowRight']) {
+        knight.vx = 1.8;
+        knight.facing = 1;
+        knight.animFrame++;
+        scrollX += 1;
+      } else {
+        knight.vx = 0;
+        // Idle animation frame: standing still
+        if (frameCount % 4 === 0) knight.animFrame = 0;
+      }
+
+      // Jump / Gravity Physics
+      if (knight.jumpState) {
+        knight.y += knight.vy;
+        knight.vy += 1.4; // 8fps gravity step
+
+        // Platform collision checks
+        let landingY = knight.groundY;
+        // Check upper right ledge (x: 184 to 256, y: 136 - knightHeight)
+        if (knight.x >= 180 && knight.y <= 120 && knight.vy >= 0) {
+          landingY = 116;
+        }
+
+        if (knight.y >= landingY) {
+          knight.y = landingY;
+          knight.vy = 0;
+          knight.jumpState = false;
+        }
+      }
+
+      knight.x += knight.vx;
+      if (knight.x < 10) knight.x = 10;
+      if (knight.x > 230) knight.x = 230;
+
+      // Attack cooldown
+      if (knight.isAttacking) {
+        knight.attackCooldown--;
+        if (knight.attackCooldown <= 0) {
+          knight.isAttacking = false;
+        }
+      }
+
+      // Update Enemies
+      for (let enemy of enemies) {
+        if (enemy.type === 'slime') {
+          enemy.x += enemy.vx;
+          if (enemy.x <= enemy.baseMin) {
+            enemy.x = enemy.baseMin;
+            enemy.vx = 0.6;
+          } else if (enemy.x >= enemy.baseMax) {
+            enemy.x = enemy.baseMax;
+            enemy.vx = -0.6;
+          }
+          if (frameCount % 2 === 0) enemy.anim++;
+        } else if (enemy.type === 'bat') {
+          enemy.t += 0.15;
+          enemy.x = enemy.baseX + Math.sin(enemy.t) * 18;
+          enemy.y = enemy.baseY + Math.cos(enemy.t * 1.5) * 8;
+        }
+      }
+
+      // Coin spin frames
+      for (let c of coins) {
+        c.anim = (c.anim + 1) % 4;
+      }
+    }
+
+    function renderScene() {
+      // Clear buffer
+      ctx.clearRect(0, 0, 256, 240);
+
+      // 1. Sky, Mountains, Castle, Pine Trees
+      renderSkyAndMountains();
+
+      // 2. Stone Ground & Platforms
+      renderPlatformsAndGround();
+
+      // 3. Enemies
+      for (let enemy of enemies) {
+        if (enemy.type === 'slime') renderSlime(enemy);
+        else if (enemy.type === 'bat') renderBat(enemy);
+      }
+
+      // 4. Collectibles (Coins)
+      for (let coin of coins) {
+        renderCoin(coin);
+      }
+
+      // 5. Knight Hero
+      renderKnight();
+
+      // 6. NES HUD Overlay
+      renderHUD();
+    }
+
+    // Strict 8 FPS Animation Frame Loop
+    let lastTime = performance.now();
+    let accumulator = 0;
+
+    function gameLoop(now) {
+      const delta = now - lastTime;
+      lastTime = now;
+      accumulator += delta;
+
+      if (isRunning) {
+        while (accumulator >= frameDuration) {
+          updateGameLogic();
+          renderScene();
+          accumulator -= frameDuration;
+        }
+      } else {
+        renderScene();
+        accumulator = 0;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start loop
+    renderScene();
+    requestAnimationFrame(gameLoop);
+
+    // --- 8. WEB AUDIO RETRO CHIPTUNE SOUND ENGINE (NES 2A03 SYNTH) ---
+    let audioCtx = null;
+    let bgmOsc1 = null;
+    let bgmOsc2 = null;
+    let isBgmPlaying = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playRetroSfx(type) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      if (type === 'jump') {
+        // Rising pulse wave
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(360, now + 0.12);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } else if (type === 'slash') {
+        // Noise / fast pulse pitch drop
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      }
+    }
+
+    // Looping 8-Bit NES Chiptune Bassline & Arpeggio
+    let bgmStep = 0;
+    const melodyNotes = [
+      261.63, 329.63, 392.00, 523.25,  // C4, E4, G4, C5
+      220.00, 261.63, 329.63, 440.00,  // A3, C4, E4, A4
+      174.61, 220.00, 261.63, 349.23,  // F3, A3, C4, F4
+      196.00, 246.94, 293.66, 392.00   // G3, B3, D4, G4
+    ];
+
+    let bgmInterval = null;
+
+    function toggleBgm() {
+      initAudio();
+      if (isBgmPlaying) {
+        clearInterval(bgmInterval);
+        isBgmPlaying = false;
+        document.getElementById('btnAudio').textContent = '🎵 BGM CHIPTUNE: OFF';
+        document.getElementById('btnAudio').classList.remove('active');
+      } else {
+        isBgmPlaying = true;
+        document.getElementById('btnAudio').textContent = '🎵 BGM CHIPTUNE: ON';
+        document.getElementById('btnAudio').classList.add('active');
+
+        // Play 8-bit note on every 8fps tick
+        bgmInterval = setInterval(() => {
+          if (!isBgmPlaying || !audioCtx) return;
+          const noteFreq = melodyNotes[bgmStep % melodyNotes.length];
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'square'; // NES 50% duty pulse
+          osc.frequency.setValueAtTime(noteFreq, audioCtx.currentTime);
+
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.1);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.11);
+
+          // Bass triangle note
+          if (bgmStep % 4 === 0) {
+            const bassOsc = audioCtx.createOscillator();
+            const bassGain = audioCtx.createGain();
+            bassOsc.type = 'triangle'; // NES triangle channel
+            bassOsc.frequency.setValueAtTime(noteFreq / 2, audioCtx.currentTime);
+            bassGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            bassGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+            bassOsc.connect(bassGain);
+            bassGain.connect(audioCtx.destination);
+            bassOsc.start();
+            bassOsc.stop(audioCtx.currentTime + 0.23);
+          }
+
+          bgmStep++;
+        }, frameDuration);
+      }
+    }
+
+    // --- 9. UI CONTROL LISTENERS ---
+    function togglePlayPause() {
+      isRunning = !isRunning;
+      const btn = document.getElementById('btnPlayPause');
+      btn.textContent = isRunning ? '⏸️ PAUSE' : '▶️ PLAY';
+      btn.classList.toggle('active', !isRunning);
+    }
+
+    document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+
+    document.getElementById('btnStep').addEventListener('click', () => {
+      isRunning = false;
+      document.getElementById('btnPlayPause').textContent = '▶️ PLAY';
+      document.getElementById('btnPlayPause').classList.add('active');
+      updateGameLogic();
+      renderScene();
+    });
+
+    // FPS Speed Cycler: 8 FPS -> 12 FPS -> 16 FPS -> 24 FPS -> 60 FPS -> 8 FPS
+    const speeds = [8, 12, 16, 24, 60];
+    let speedIdx = 0;
+    document.getElementById('btnToggleFps').addEventListener('click', () => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      targetFps = speeds[speedIdx];
+      frameDuration = 1000 / targetFps;
+      document.getElementById('fpsDisplay').textContent = targetFps + ' FPS';
+      document.getElementById('btnToggleFps').textContent = '⏱️ SPEED: ' + targetFps + ' FPS';
+    });
+
+    // Dither Toggle
+    document.getElementById('btnToggleDither').addEventListener('click', (e) => {
+      enableDithering = !enableDithering;
+      e.target.classList.toggle('active', enableDithering);
+      e.target.textContent = enableDithering ? '🏁 DITHER: ON' : '🏁 DITHER: OFF';
+      document.getElementById('ditherDisplay').textContent = enableDithering ? 'ENABLED (4x4)' : 'DISABLED';
+      renderScene();
+    });
+
+    // CRT Toggle
+    document.getElementById('btnToggleCRT').addEventListener('click', (e) => {
+      enableCRT = !enableCRT;
+      e.target.classList.toggle('active', enableCRT);
+      e.target.textContent = enableCRT ? '📺 CRT SCANLINES: ON' : '📺 CRT SCANLINES: OFF';
+      document.getElementById('crtOverlay').classList.toggle('disabled', !enableCRT);
+    });
+
+    // Audio Toggle
+    document.getElementById('btnAudio').addEventListener('click', toggleBgm);
+
+  </script>
+</body>
+</html>

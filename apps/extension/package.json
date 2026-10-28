@@ -1,0 +1,16 @@
+{
+  "name": "@focus-ar/extension",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@focus-ar/types": "*"
+  },
+  "devDependencies": {
+    "@focus-ar/config": "*",
+    "@types/chrome": "^0.0.260",
+    "typescript": "^5.3.3"
+  }
+}

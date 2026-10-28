@@ -1,0 +1,408 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ProcrastinationStyle {
+  TOO_DIFFICULT
+  TIRED
+  FEAR_OF_FAILURE
+  NOT_KNOWING_HOW
+  RUSH_SEEKER
+}
+
+enum SessionType {
+  TWO_MINUTE
+  POMODORO
+  CUSTOM
+}
+
+enum SessionStatus {
+  INIT
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum InterventionReason {
+  DISTRACTOR_TAB
+  IDLE_TIMEOUT
+  PHONE_DETECTED
+  LOOKING_AWAY
+  USER_STUCK
+}
+
+enum RoomMemberStatus {
+  FOCUSING
+  IDLE
+  ON_BREAK
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile                 Profile?
+  procrastinationProfile  ProcrastinationProfile?
+  settings                Settings?
+  extensionDevices        ExtensionDevice[]
+  goals                   Goal[]
+  tasks                   Task[]
+  focusSessions           FocusSession[]
+  tabEvents               TabEvent[]
+  presenceEvents          PresenceEvent[]
+  interventions           Intervention[]
+  userBadges              UserBadge[]
+  streaks                 Streak[]
+  xpLogs                  XPLog[]
+  hostedRooms             StudyRoom[]           @relation("RoomHost")
+  roomMemberships         StudyRoomMember[]
+  buddyPairsAs1           BuddyPair[]           @relation("Buddy1")
+  buddyPairsAs2           BuddyPair[]           @relation("Buddy2")
+  reports                 Report[]
+  aiConversations         AIConversation[]
+  aiPromptLogs            AIPromptLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  displayName           String
+  avatarUrl             String?
+  studyGoal             String?
+  dailyAvailableMinutes Int      @default(60)
+  procrastinationStyle  String   @default("NOT_KNOWING_HOW")
+  distractorDomains     String   @default("facebook.com,tiktok.com,youtube.com")
+
+  // === My Duc B High School Fields ===
+  schoolClass           String?  // e.g. "12C1", "11B2"
+  targetSubject         String?  // e.g. "Toan", "Tieng Anh"
+  mainDistraction       String?  // e.g. "TikTok", "Lien Quan"
+  scoreGoal             String?  // e.g. "Dat 8+ diem Toan"
+  isExamMode            Boolean  @default(false)
+
+  // === Pet System ===
+  petStage              String   @default("EGG")    // EGG | BABY | TEEN | WARRIOR
+  petXP                 Int      @default(0)
+  petEmoji              String   @default("egg")
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model ProcrastinationProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  primaryStyle          String   @default("NOT_KNOWING_HOW")
+  distractors           String   @default("")
+  preferredBreakLength  Int      @default(5)
+  preferredSessionMins  Int      @default(25)
+  motivationQuoteType   String   @default("GENTLE")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
+
+  @@map("procrastination_profiles")
+}
+
+// === My Duc B Class Leaderboard ===
+model ClassLeaderboard {
+  id           String   @id @default(uuid())
+  className    String   @unique // "12C1", "11B2", etc.
+  totalHours   Float    @default(0)
+  streakDays   Int      @default(0)
+  memberCount  Int      @default(0)
+  topSubject   String   @default("Tong hop")
+  updatedAt    DateTime @updatedAt
+
+  @@map("class_leaderboard")
+}
+
+model Settings {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  webcamEnabled      Boolean  @default(true)
+  arOverlayEnabled   Boolean  @default(true)
+  extensionEnabled  Boolean  @default(true)
+  soundEffectsEnabled Boolean @default(true)
+  allowDataAnalytics Boolean  @default(true)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model ExtensionDevice {
+  id          String   @id @default(uuid())
+  userId      String
+  extensionId String   @unique
+  deviceName  String?
+  lastActive  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@map("extension_devices")
+}
+
+model Goal {
+  id                 String   @id @default(uuid())
+  userId             String
+  title              String
+  description        String?
+  category           String?  @default("Học tập")
+  targetDate         DateTime?
+  isCompleted        Boolean  @default(false)
+  progressPercentage Int      @default(0)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks              Task[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("goals")
+}
+
+model Task {
+  id               String         @id @default(uuid())
+  userId           String
+  goalId           String
+  title            String
+  description      String?
+  estimatedMinutes Int            @default(15)
+  isCompleted      Boolean        @default(false)
+  orderIndex       Int            @default(0)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal             Goal           @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  subTasks         SubTask[]
+  focusSessions    FocusSession[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("tasks")
+}
+
+model SubTask {
+  id               String   @id @default(uuid())
+  taskId           String
+  title            String
+  estimatedMinutes Int      @default(5)
+  isCompleted      Boolean  @default(false)
+  orderIndex       Int      @default(0)
+  task             Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("sub_tasks")
+}
+
+model FocusSession {
+  id              String        @id @default(uuid())
+  userId          String
+  taskId          String?
+  sessionType     SessionType   @default(TWO_MINUTE)
+  durationSeconds Int           @default(120)
+  actualSeconds   Int           @default(0)
+  status          SessionStatus @default(INIT)
+  startedAt       DateTime      @default(now())
+  endedAt         DateTime?
+  extendedCount   Int           @default(0)
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task          Task?          @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  tabEvents     TabEvent[]
+  presenceEvents PresenceEvent[]
+  interventions Intervention[]
+
+  @@map("focus_sessions")
+}
+
+model TabEvent {
+  id           String        @id @default(uuid())
+  userId       String
+  sessionId    String?
+  url          String
+  domain       String
+  title        String?
+  isDistractor Boolean       @default(false)
+  timestamp    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session      FocusSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@map("tab_events")
+}
+
+model PresenceEvent {
+  id              String        @id @default(uuid())
+  userId          String
+  sessionId       String?
+  isPresent       Boolean       @default(true)
+  lookingAway     Boolean       @default(false)
+  phoneDetected   Boolean       @default(false)
+  confidenceScore Float         @default(1.0)
+  timestamp       DateTime      @default(now())
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session         FocusSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@map("presence_events")
+}
+
+model Intervention {
+  id              String             @id @default(uuid())
+  userId          String
+  sessionId       String?
+  reason          InterventionReason
+  coachMessage    String
+  suggestedAction String
+  microSteps      String[]           @default([])
+  userChoice      String?
+  createdAt       DateTime           @default(now())
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session         FocusSession?      @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@map("interventions")
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  description String
+  icon        String
+  xpReward    Int         @default(50)
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Streak {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  currentStreak  Int      @default(1)
+  longestStreak  Int      @default(1)
+  lastStudyDate  DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model XPLog {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  reason    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("xp_logs")
+}
+
+model StudyRoom {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  category    String            @default("Chung")
+  maxMembers  Int               @default(8)
+  hostId      String
+  isPrivate   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  host        User              @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+  members     StudyRoomMember[]
+
+  @@map("study_rooms")
+}
+
+model StudyRoomMember {
+  id               String           @id @default(uuid())
+  roomId           String
+  userId           String
+  status           RoomMemberStatus @default(FOCUSING)
+  currentTaskTitle String?
+  joinedAt         DateTime         @default(now())
+  room             StudyRoom        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("study_room_members")
+}
+
+model BuddyPair {
+  id        String   @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  user1     User     @relation("Buddy1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User     @relation("Buddy2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@map("buddy_pairs")
+}
+
+model Report {
+  id                     String   @id @default(uuid())
+  userId                 String
+  date                   String
+  totalFocusMinutes      Int      @default(0)
+  completedTasksCount    Int      @default(0)
+  tabDistractionsCount   Int      @default(0)
+  phoneDistractionsCount Int      @default(0)
+  aiReviewSummary        String
+  topDistractorDomains   Json?
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime @default(now())
+
+  @@map("reports")
+}
+
+model AIConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_conversations")
+}
+
+model AIPromptLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  prompt    String
+  response  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_prompt_logs")
+}

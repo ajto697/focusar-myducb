@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixelopolis - Isometric City Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Fullscreen Game Canvas -->
+  <div id="canvasContainer">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <!-- Audio Start Overlay (For Browser Autoplay Policy) -->
+  <div id="audioOverlay" class="overlay-modal">
+    <div class="overlay-card">
+      <div class="pixel-logo">🏙️ PIXELOPOLIS</div>
+      <h2>Chào mừng đến Pixelopolis!</h2>
+      <p>Game mô phỏng thành phố Pixel Art Isometric phong cách TheoTown.</p>
+      <button id="startAudioBtn" class="btn btn-primary">🎮 BẮT ĐẦU CHƠI (BẬT ÂM THANH)</button>
+    </div>
+  </div>
+
+  <!-- Top Navigation & Stats Bar -->
+  <header id="topBar">
+    <div class="brand">
+      <span class="logo-icon">🏙️</span>
+      <span class="city-name" id="cityNameDisplay">Pixelopolis</span>
+      <button id="renameCityBtn" title="Đổi tên thành phố">✏️</button>
+    </div>
+
+    <div class="stats-group">
+      <div class="stat-item funds" title="Ngân sách khả dụng">
+        <span class="stat-icon">💵</span>
+        <span class="stat-value" id="fundsVal">$50,000</span>
+      </div>
+      <div class="stat-item pop" title="Tổng cư dân">
+        <span class="stat-icon">👥</span>
+        <span class="stat-value" id="popVal">0</span>
+      </div>
+      <div class="stat-item happy" title="Độ hài lòng trung bình">
+        <span class="stat-icon">😊</span>
+        <span class="stat-value" id="happyVal">85%</span>
+      </div>
+      <div class="stat-item date" title="Thời gian game">
+        <span class="stat-icon">📅</span>
+        <span class="stat-value" id="dateVal">Thg 1, N2026</span>
+      </div>
+    </div>
+
+    <!-- RCI Demand Meter -->
+    <div class="rci-meter" title="Nhu cầu phân vùng: R (Nhà), C (Thương mại), I (Công nghiệp)">
+      <div class="rci-bar r-bar" id="rDemandBar" style="height: 70%;" title="Nhu cầu Nhà ở">R</div>
+      <div class="rci-bar c-bar" id="cDemandBar" style="height: 50%;" title="Nhu cầu Thương mại">C</div>
+      <div class="rci-bar i-bar" id="iDemandBar" style="height: 60%;" title="Nhu cầu Công nghiệp">I</div>
+    </div>
+
+    <!-- Time Controls & Speed -->
+    <div class="time-controls">
+      <button class="speed-btn active" data-speed="1" title="Tốc độ 1x">▶</button>
+      <button class="speed-btn" data-speed="2" title="Tốc độ 2x">▶▶</button>
+      <button class="speed-btn" data-speed="5" title="Tốc độ 5x">⚡</button>
+      <button class="speed-btn" id="pauseBtn" title="Tạm dừng">⏸</button>
+    </div>
+
+    <!-- Actions & Settings -->
+    <div class="top-actions">
+      <button id="artGalleryBtn" class="btn btn-secondary" title="Xem bộ sưu tập TheoTown Pixel Art">🖼️ Gallery</button>
+      <button id="presetBtn" class="btn btn-secondary" title="Chọn bản đồ mẫu">🗺️ Bản đồ mẫu</button>
+      <button id="budgetModalBtn" class="btn btn-secondary" title="Quản lý ngân sách & thuế">📊 Ngân sách</button>
+      <button id="audioToggleBtn" class="btn btn-icon" title="Bật/Tắt Âm thanh">🔊</button>
+      <button id="saveBtn" class="btn btn-icon" title="Lưu game">💾</button>
+      <button id="loadBtn" class="btn btn-icon" title="Tải game">📂</button>
+    </div>
+  </header>
+
+  <!-- Left Sidebar Data Overlays -->
+  <aside id="overlaySidebar">
+    <div class="sidebar-title">BẢN ĐỒ DỮ LIỆU</div>
+    <button class="overlay-btn active" data-overlay="none">🌍 Mặc định</button>
+    <button class="overlay-btn" data-overlay="power">⚡ Lưới Điện</button>
+    <button class="overlay-btn" data-overlay="water">💧 Nguồn Nước</button>
+    <button class="overlay-btn" data-overlay="traffic">🚗 Giao thông</button>
+    <button class="overlay-btn" data-overlay="pollution">🏭 Ô nhiễm</button>
+    <button class="overlay-btn" data-overlay="services">🚑 An ninh & Y tế</button>
+  </aside>
+
+  <!-- Inspector / Tile Details Drawer -->
+  <div id="inspectorDrawer" class="drawer hidden">
+    <div class="drawer-header">
+      <h3 id="inspectTitle">Chi tiết ô đất</h3>
+      <button id="closeDrawerBtn" class="close-btn">&times;</button>
+    </div>
+    <div class="drawer-body" id="inspectContent">
+      <!-- Dynamic tile details filled by JS -->
+    </div>
+  </div>
+
+  <!-- Bottom Floating Tool Bar -->
+  <nav id="toolBar">
+    <div class="tool-categories">
+      <button class="cat-btn active" data-cat="info">🔍 Soi</button>
+      <button class="cat-btn" data-cat="demolish">🚜 Phá hủy</button>
+      <button class="cat-btn" data-cat="infra">🛣️ Hạ tầng</button>
+      <button class="cat-btn" data-cat="utility">⚡ Năng lượng & Nước</button>
+      <button class="cat-btn" data-cat="zones">🏗️ Phân vùng RCI</button>
+      <button class="cat-btn" data-cat="services">🏥 Dịch vụ công</button>
+      <button class="cat-btn" data-cat="parks">🌲 Công viên</button>
+    </div>
+
+    <!-- Active Category Items -->
+    <div id="toolItems" class="tool-items">
+      <!-- Filled by JS based on selected category -->
+    </div>
+
+    <!-- Selected Tool Info Badge -->
+    <div id="toolCostBadge" class="tool-cost-badge">
+      <span id="toolNameDisplay">Công cụ Soi</span> - <span id="toolCostDisplay">Chi phí: $0</span>
+    </div>
+  </nav>
+
+  <!-- Budget Modal -->
+  <div id="budgetModal" class="modal hidden">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h2>📊 Quản lý Tài chính & Ngân sách</h2>
+        <button id="closeBudgetBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="budget-section">
+          <h3>Thuế suất Phân vùng</h3>
+          <div class="slider-group">
+            <label>Thuế Dân cư (R): <span id="rTaxLabel">9%</span></label>
+            <input type="range" id="rTaxSlider" min="0" max="20" value="9">
+          </div>
+          <div class="slider-group">
+            <label>Thuế Thương mại (C): <span id="cTaxLabel">9%</span></label>
+            <input type="range" id="cTaxSlider" min="0" max="20" value="9">
+          </div>
+          <div class="slider-group">
+            <label>Thuế Công nghiệp (I): <span id="iTaxLabel">9%</span></label>
+            <input type="range" id="iTaxSlider" min="0" max="20" value="9">
+          </div>
+        </div>
+
+        <div class="budget-summary">
+          <div class="budget-row">
+            <span>Doanh thu Thuế hàng tháng:</span>
+            <span id="taxRevenueVal" class="text-green">+$0</span>
+          </div>
+          <div class="budget-row">
+            <span>Chi phí bảo trì Dịch vụ:</span>
+            <span id="serviceCostVal" class="text-red">-$0</span>
+          </div>
+          <hr>
+          <div class="budget-row total">
+            <span>Lợi nhuận ròng / Tháng:</span>
+            <span id="netIncomeVal">$0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Presets Selection Modal -->
+  <div id="presetModal" class="modal hidden">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h2>🗺️ Chọn Bản đồ Mẫu</h2>
+        <button id="closePresetBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body preset-grid">
+        <div class="preset-card" id="presetEmpty">
+          <div class="preset-icon">🌱</div>
+          <h3>New Hope Valley</h3>
+          <p>Thung lũng hoang sơ với sông hồ và rừng cây. Thích hợp để tự do quy hoạch từ đầu!</p>
+          <button class="btn btn-primary">Tạo mới từ đầu</button>
+        </div>
+        <div class="preset-card" id="presetCity">
+          <div class="preset-icon">🏙️</div>
+          <h3>Pixel Metropolis</h3>
+          <p>Đô thị 5,000+ dân hoành tráng đã hoàn thiện với đầy đủ giao thông, nhà cao tầng lung linh ban đêm!</p>
+          <button class="btn btn-primary">Trải nghiệm ngay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TheoTown Pixel Art Gallery Modal -->
+  <div id="galleryModal" class="modal hidden">
+    <div class="modal-content glass-card" style="width: 720px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2>🖼️ Bộ sưu tập Đồ họa Pixel TheoTown</h2>
+        <button id="closeGalleryBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <p style="color: var(--text-muted); margin-bottom: 12px;">Sprite Sheet Pixel Art 16-bit Isometric được khởi tạo dành riêng cho Pixelopolis:</p>
+        <img src="assets/theotown_sprites.png" alt="TheoTown Spritesheet" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--panel-border); box-shadow: var(--shadow-main);">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Main Game Scripts -->
+  <script src="js/pixel_art_sprites.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/traffic.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
